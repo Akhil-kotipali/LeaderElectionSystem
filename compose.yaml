@@ -1,0 +1,74 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: coordination_hub
+      MYSQL_USER: coordination_app
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in your environment}
+    volumes:
+      - coordination-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -u
+        - coordination_app
+        - -p${DB_PASSWORD}
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  node-1:
+    build: .
+    environment:
+      NODE_ID: node-1
+      SERVER_PORT: 8080
+      DB_URL: jdbc:mysql://mysql:3306/coordination_hub
+      DB_USERNAME: coordination_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment}
+    ports:
+      - "8081:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  node-2:
+    build: .
+    environment:
+      NODE_ID: node-2
+      SERVER_PORT: 8080
+      DB_URL: jdbc:mysql://mysql:3306/coordination_hub
+      DB_USERNAME: coordination_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment}
+    ports:
+      - "8082:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  node-3:
+    build: .
+    environment:
+      NODE_ID: node-3
+      SERVER_PORT: 8080
+      DB_URL: jdbc:mysql://mysql:3306/coordination_hub
+      DB_USERNAME: coordination_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment}
+    ports:
+      - "8083:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  coordination-data:
